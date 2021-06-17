@@ -91,11 +91,11 @@ public class RBTree<T extends Comparable<T>> {
 
         //先设置拷贝出来的x右孩子
         //x的父节点:判断y是否为根节点，
-       // 为根节点设置x为根节点，
-         //this.mRoot=x;
+        // 为根节点设置x为根节点，
+        //this.mRoot=x;
         //不为根节点在判断：y是否为左右孩子，
         //左孩子，x=y.parent.left
-            //    右孩子:x=y.parent.right;
+        //    右孩子:x=y.parent.right;
         //x的上层已经处理好，处理下层
         //x的右孩子设置y
         //y的父节点设置x;
@@ -124,4 +124,164 @@ public class RBTree<T extends Comparable<T>> {
 
     }
 
+    /*
+     * 将结点插入到红黑树中
+     *
+     * 参数说明：
+     *     node 插入的结点        // 对应《算法导论》中的node
+     */
+    private void insert(RBTNode<T> node) {
+        int cmp;
+        RBTNode<T> y = null;
+        RBTNode<T> x = this.mRoot;
+
+        // 1. 将红黑树当作一颗二叉查找树，将节点添加到二叉查找树中。
+        while (x != null) {
+            y = x;
+            cmp = node.key.compareTo(x.key);
+            if (cmp < 0)
+                x = x.left;
+            else
+                x = x.right;
+        }
+
+        node.parent = y;
+        if (y != null) {
+            cmp = node.key.compareTo(y.key);
+            if (cmp < 0)
+                y.left = node;
+            else
+                y.right = node;
+        } else {
+            this.mRoot = node;
+        }
+
+        // 2. 设置节点的颜色为红色
+        node.color = RED;
+
+        // 3. 将它重新修正为一颗二叉查找树
+        insertFixUp(node);
+    }
+
+    /*
+     * 新建结点(key)，并将其插入到红黑树中
+     *
+     * 参数说明：
+     *     key 插入结点的键值
+     */
+    public void insert(T key) {
+        RBTNode<T> node = new RBTNode<T>(key, BLACK, null, null, null);
+
+        // 如果新建结点失败，则返回。
+        if (node != null)
+            insert(node);
+    }
+
+    /*
+     * 红黑树插入修正函数
+     *
+     * 在向红黑树中插入节点之后(失去平衡)，再调用该函数；
+     * 目的是将它重新塑造成一颗红黑树。
+     *
+     * 参数说明：
+     *     node 插入的结点        // 对应《算法导论》中的z
+     */
+    private void insertFixUp(RBTNode<T> node) {
+        RBTNode<T> parent, gParent;
+
+        // 若“父节点存在，并且父节点的颜色是红色”
+        while (((parent = parentOf(node)) != null) && isRed(parent)) {
+            gParent = parentOf(parent);
+
+            //若“父节点”是“祖父节点的左孩子”
+            if (parent == gParent.left) {
+                // Case 1条件：叔叔节点是红色
+                RBTNode<T> uncle = gParent.right;
+                if ((uncle != null) && isRed(uncle)) {
+                    setBlack(uncle);
+                    setBlack(parent);
+                    setRed(gParent);
+                    node = gParent;
+                    continue;
+                }
+
+                // Case 2条件：叔叔是黑色，且当前节点是右孩子
+                if (parent.right == node) {
+                    RBTNode<T> tmp;
+                    leftRotate(parent);
+                    tmp = parent;
+                    parent = node;
+                    node = tmp;
+                }
+
+                // Case 3条件：叔叔是黑色，且当前节点是左孩子。
+                setBlack(parent);
+                setRed(gParent);
+                rightRotate(gParent);
+            } else {    //若“z的父节点”是“z的祖父节点的右孩子”
+                // Case 1条件：叔叔节点是红色
+                RBTNode<T> uncle = gParent.left;
+                if ((uncle != null) && isRed(uncle)) {
+                    setBlack(uncle);
+                    setBlack(parent);
+                    setRed(gParent);
+                    node = gParent;
+                    continue;
+                }
+
+                // Case 2条件：叔叔是黑色，且当前节点是左孩子
+                if (parent.left == node) {
+                    RBTNode<T> tmp;
+                    rightRotate(parent);
+                    tmp = parent;
+                    parent = node;
+                    node = tmp;
+                }
+
+                // Case 3条件：叔叔是黑色，且当前节点是右孩子。
+                setBlack(parent);
+                setRed(gParent);
+                leftRotate(gParent);
+            }
+        }
+
+        // 将根节点设为黑色
+        setBlack(this.mRoot);
+    }
+
+    private RBTNode<T> parentOf(RBTNode<T> node) {
+        return node != null ? node.parent : null;
+    }
+
+    private boolean colorOf(RBTNode<T> node) {
+        return node != null ? node.color : BLACK;
+    }
+
+    private boolean isRed(RBTNode<T> node) {
+        return (node != null) && (node.color == RED);
+    }
+
+    private boolean isBlack(RBTNode<T> node) {
+        return !isRed(node);
+    }
+
+    private void setBlack(RBTNode<T> node) {
+        if (node != null)
+            node.color = BLACK;
+    }
+
+    private void setRed(RBTNode<T> node) {
+        if (node != null)
+            node.color = RED;
+    }
+
+    private void setParent(RBTNode<T> node, RBTNode<T> parent) {
+        if (node != null)
+            node.parent = parent;
+    }
+
+    private void setColor(RBTNode<T> node, boolean color) {
+        if (node != null)
+            node.color = color;
+    }
 }
